@@ -3,6 +3,7 @@ import os
 
 from components.settings import Settings
 from components.config import Config
+from components.scan import Scan
 
 
 class Main:
@@ -53,20 +54,23 @@ class Main:
 
     def menu_main(self):
 
-        value = self.input("MAIN MENU", "1: Exit | 2: Scan | 3: Recent | 4: Configs | 5: Reload", int)
+        value = self.input("MAIN MENU", "1: Exit | 2: Scan | 3: Recent | 4: Configurations | 5: Reload", int)
         if not value:
             print("Invalid input!")
             return self.menu_main()
         match value:
             case 1:
                 print("")
-                print("Exit ...")
+                print("Exit")
             case 2:
                 self.menu_scan()
                 return self.menu_main()
             case 3:
                 print("")
-                print("Scan recent ...")
+                print("Scan recent")
+                print("")
+                print(f"Start scan of {self.settings.recent_path} with configuration {self.settings.recent_config} ...")
+                self.scan(self.settings.recent_path, self.settings.recent_config)
                 return self.menu_main()
             case 4:
                 self.menu_configs()
@@ -81,19 +85,62 @@ class Main:
                 return self.menu_main()
 
     def menu_scan(self):
-        pass
+
+        print("")
+        print("Scan")
+
+        while True:
+            path = self.input("Enter the path of the directory to scan:", "Path (Default: '.') | Cancel: 'cancel'", str)
+            if path.lower() == "cancel":
+                return
+            if os.path.exists(path):
+                break
+            print("Invalid path!")
+
+        print("")
+        print("Available configurations:")
+        for config in self.configs:
+            print(f"- {config}")
+
+        while True:
+            config = self.input("Type the name of the configuration to use:", "Configuration Name | Manage configurations: 'manage' | Cancel: 'cancel'", str)
+            if config.lower() == "cancel":
+                return
+            if config.lower() == "manage":
+                return self.menu_configs()
+            if config in self.configs:
+                break
+            print("Invalid configuration name!")
+
+        print("")
+        print(f"Start scan of {path} with configuration {config} ...")
+        self.scan(path, config)
 
     def menu_configs(self):
         pass
 
+    def scan(self, path, config):
+
+        result = Scan(path, self.configs[config], self)
+
+        print(f"Real size: {result.real_size}")
+        print(f"Filtered size: {result.filtered_size}")
+        print("Type sizes:")
+        for file_type, size in result.type_size.items():
+            print(f"- {file_type}: {size}")
+
+        self.settings.recent_path = path
+        self.settings.recent_config = config
+        self.settings.save()
+
     def output(self, message, debug=False):
 
         if not debug:
-            print("INFO:  " + message)
+            print(f"INFO:  {message}")
             return
 
         if self.debug:
-            print("DEBUG: " + message)
+            print(f"DEBUG: {message}")
 
     def input(self, prompt, options="String", cast=str):
 

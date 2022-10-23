@@ -1,5 +1,10 @@
 {
-  "included_types": [
-    "py"
-  ]
+    "excluded_names": [
+        ".git",
+        ".idea",
+        "venv",
+        "__pycache__"
+    ],
+    "included_types": [
+    ]
 }

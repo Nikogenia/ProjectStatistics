@@ -13,6 +13,9 @@ class Config:
         self.included_names = []
         self.excluded_names = []
 
+        self.calc_size = True
+        self.calc_lines = True
+
     def load(self):
 
         try:
@@ -30,6 +33,11 @@ class Config:
                 if "excluded_names" in data:
                     self.excluded_names = data["excluded_names"]
 
+                if "calc_size" in data:
+                    self.calc_size = data["calc_size"]
+                if "calc_lines" in data:
+                    self.calc_lines = data["calc_lines"]
+
         except (IOError, json.JSONDecodeError):
             return False
 
@@ -46,7 +54,10 @@ class Config:
                     "excluded_types": self.excluded_types,
 
                     "included_names": self.included_names,
-                    "excluded_names": self.excluded_names
+                    "excluded_names": self.excluded_names,
+
+                    "calc_size": self.calc_size,
+                    "calc_lines": self.calc_lines
 
                 }
 
