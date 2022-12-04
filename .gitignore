@@ -2,4 +2,7 @@
 
 venv
 
+configs
+settings.json
+
 **/__pycache__

@@ -1,4 +1,5 @@
 import json
+import os
 
 
 class Config:
@@ -67,3 +68,7 @@ class Config:
             return False
 
         return True
+
+    def delete(self):
+
+        os.remove(self.path)

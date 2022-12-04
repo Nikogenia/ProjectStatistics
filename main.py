@@ -44,9 +44,9 @@ class Main:
         for entry in os.listdir(self.settings.configs):
             if os.path.isdir(os.path.join(self.settings.configs, entry)):
                 continue
-            if os.path.splitext(entry)[1] != ".json":
+            if entry.split(".")[-1].lower() != "json":
                 continue
-            self.output(f"Load config '{os.path.splitext(entry)[0]}' ...", True)
+            self.output(f"Load config '{'.'.join(entry.split('.')[:-1])}' ...", True)
             config = Config(os.path.join(self.settings.configs, entry))
             if not config.load():
                 self.output("Error occurred on loading a config!", True)
@@ -69,7 +69,13 @@ class Main:
                 print("")
                 print("Scan recent")
                 print("")
-                print(f"Start scan of {self.settings.recent_path} with configuration {self.settings.recent_config} ...")
+                if self.settings.recent_config not in self.configs:
+                    print("Cannot find configuration!")
+                    return self.menu_main()
+                if not os.path.exists(self.settings.recent_path):
+                    print("The path don't exist anymore!")
+                    return self.menu_main()
+                print(f"Start scan of '{self.settings.recent_path}' with configuration '{self.settings.recent_config}' ...")
                 self.scan(self.settings.recent_path, self.settings.recent_config)
                 return self.menu_main()
             case 4:
@@ -87,7 +93,7 @@ class Main:
     def menu_scan(self):
 
         print("")
-        print("Scan")
+        print("SCAN")
 
         while True:
             path = self.input("Enter the path of the directory to scan:", "Path (Default: '.') | Cancel: 'cancel'", str)
@@ -98,7 +104,10 @@ class Main:
             print("Invalid path!")
 
         print("")
-        print("Available configurations:")
+        if len(self.configs) > 0:
+            print("Available configurations:")
+        else:
+            print("No configurations available! Type 'manage' to create one ...")
         for config in self.configs:
             print(f"- {config}")
 
@@ -113,36 +122,112 @@ class Main:
             print("Invalid configuration name!")
 
         print("")
-        print(f"Start scan of {path} with configuration {config} ...")
+        print(f"Start scan of '{path}' with configuration '{config}' ...")
         self.scan(path, config)
 
     def menu_configs(self):
-        pass
+
+        print("")
+        if len(self.configs) > 0:
+            print("Configurations:")
+        else:
+            print("No configurations available!")
+        for config in self.configs:
+            print(f"- {config}")
+
+        value = self.input("MANAGE CONFIGURATIONS", "1: Main Menu | 2: Create | 3: Edit | 4: Delete | 5: Reload", int)
+        if not value:
+            print("Invalid input!")
+            return self.menu_configs()
+        match value:
+            case 1:
+                return
+            case 2:
+                print("")
+                print("Create configuration ...")
+                while True:
+                    name = self.input("Type the name for the configuration to create:", "Configuration Name | Cancel: 'cancel'", str)
+                    if name.lower() == "cancel":
+                        return self.menu_configs()
+                    if name in self.configs:
+                        print("A configuration with this name already exists!")
+                        continue
+                    if name.strip() != "":
+                        break
+                    print("Invalid configuration name!")
+                self.configs[name] = Config(os.path.join(self.settings.configs, name + ".json"))
+                self.configs[name].save()
+                return self.menu_configs()
+            case 3:
+                print("")
+                print("Edit configuration ...")
+                while True:
+                    name = self.input("Type the name of the configuration to edit:", "Configuration Name | Cancel: 'cancel'", str)
+                    if name.lower() == "cancel":
+                        return self.menu_configs()
+                    if name in self.configs:
+                        break
+                    print("Invalid configuration name!")
+                print("")
+                print("Open editor ...")
+                os.system(self.settings.editor.replace("#path", self.configs[name].path))
+                print("")
+                print("Reload ...")
+                self.load()
+                return self.menu_configs()
+            case 4:
+                print("")
+                print("Delete configuration ...")
+                while True:
+                    name = self.input("Type the name of the configuration to delete:", "Configuration Name | Cancel: 'cancel'", str)
+                    if name.lower() == "cancel":
+                        return self.menu_configs()
+                    if name in self.configs:
+                        break
+                    print("Invalid configuration name!")
+                self.configs[name].delete()
+                self.configs.pop(name)
+                return self.menu_configs()
+            case 5:
+                print("")
+                print("Reload")
+                self.load()
+                return self.menu_configs()
+            case _:
+                print("Invalid input!")
+                return self.menu_configs()
 
     def scan(self, path, config):
 
         result = Scan(path, self.configs[config], self)
 
-        print(f"Real size: {result.real_size}")
-        print(f"Filtered size: {result.filtered_size}")
+        print("")
+        print("RESULT")
+        print(f"Real size: {Scan.format_size(result.real_size)} ({result.real_size} bytes)")
+        print(f"Filtered size: {Scan.format_size(result.filtered_size)} ({result.filtered_size} bytes)")
         print("Type sizes:")
         for file_type, size in result.type_size.items():
-            print(f"- {file_type}: {size}")
+            print(f"- {file_type}: {Scan.format_size(size)} ({size} bytes)")
+        print(f"Lines: {result.lines} lines")
+        print("Type lines:")
+        for file_type, lines in result.type_lines.items():
+            print(f"- {file_type}: {lines} lines")
 
         self.settings.recent_path = path
         self.settings.recent_config = config
         self.settings.save()
 
-    def output(self, message, debug=False):
+    def output(self, message, debug=False, end="\n"):
 
         if not debug:
-            print(f"INFO:  {message}")
+            print(f"INFO:  {message}", end=end)
             return
 
         if self.debug:
-            print(f"DEBUG: {message}")
+            print(f"DEBUG: {message}", end=end)
 
-    def input(self, prompt, options="String", cast=str):
+    @staticmethod
+    def input(prompt, options="String", cast=str):
 
         print("")
         print(prompt)
@@ -155,7 +240,6 @@ class Main:
 
 
 if __name__ == '__main__':
-
     Main("-d" in sys.argv)
 
     sys.exit(0)

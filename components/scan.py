@@ -15,6 +15,9 @@ class Scan:
         self.filtered_size = 0
         self.type_size = {}
 
+        self.lines = 0
+        self.type_lines = {}
+
         self.whitelist_types = len(self.config.included_types) > 0
         self.whitelist_names = len(self.config.included_names) > 0
 
@@ -68,19 +71,42 @@ class Scan:
 
         if self.whitelist_types:
             for include_type in self.config.included_types:
-                if "." + include_type.lower() == entry.name.split(".")[-1].lower():
+                if include_type.lower() == entry.name.split(".")[-1].lower():
                     break
             else:
                 return
 
         for exclude_type in self.config.excluded_types:
-            if "." + exclude_type.lower() == entry.name.split(".")[-1].lower():
+            if exclude_type.lower() == entry.name.split(".")[-1].lower():
                 return
 
-        self.main.output(f"Scan file '{entry.path}' ...", True)
+        self.main.output(f"Scan file '{entry.path}' ... Size = {Scan.format_size(file_size)} ", True, "" if self.config.calc_lines else "\n")
 
         if self.config.calc_size:
             self.filtered_size += file_size
             if not entry.name.split(".")[-1].lower() in self.type_size:
                 self.type_size[entry.name.split(".")[-1].lower()] = 0
             self.type_size[entry.name.split(".")[-1].lower()] += file_size
+
+        if self.config.calc_lines:
+            try:
+                with open(entry.path, "r") as file:
+                    lines = len(file.read().splitlines()) + 1
+                    print(f"Lines = {lines}")
+                    self.lines += lines
+                    if not entry.name.split(".")[-1].lower() in self.type_lines:
+                        self.type_lines[entry.name.split(".")[-1].lower()] = 0
+                    self.type_lines[entry.name.split(".")[-1].lower()] += lines
+            except UnicodeError:
+                self.main.output(f"Unicode error on scanning file '{entry.path}' ...", True)
+            except PermissionError:
+                self.main.output(f"Permission error on scanning file '{entry.path}' ...", True)
+            except OSError:
+                self.main.output(f"Unknown error on scanning file '{entry.path}' ...", True)
+
+    @staticmethod
+    def format_size(size):
+        for unit in ["", "K", "M", "G", "T", "P", "E"]:
+            if size < 1000:
+                return f"{size:.1f}{unit}B"
+            size /= 1000
