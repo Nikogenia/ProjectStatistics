@@ -25,7 +25,7 @@ class Main:
         print(f"Debug mode: {self.debug}")
         print("")
 
-        self.settings = Settings("./settings.json")
+        self.settings = Settings(os.path.abspath(f"{__file__}/../settings.json"), os.path.abspath(f"{__file__}/../configs"))
 
         self.configs = {}
 

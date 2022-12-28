@@ -4,11 +4,11 @@ import os
 
 class Settings:
 
-    def __init__(self, path):
+    def __init__(self, path, default_config_path):
 
         self.path = path
 
-        self.configs = "./configs"
+        self.configs = default_config_path
         self.editor = "notepad.exe #path"
         self.recent_path = ""
         self.recent_config = "all"

@@ -1,6 +1,0 @@
-{
-    "configs": "./configs", 
-    "editor": "notepad.exe #path", 
-    "recent_path": "..\\..\\..", 
-    "recent_config": "python-only"
-}
